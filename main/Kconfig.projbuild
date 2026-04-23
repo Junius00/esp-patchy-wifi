@@ -1,0 +1,105 @@
+menu "Patchy Wi-Fi Configuration"
+
+    config PATCHY_AP_SSID
+        string "SoftAP SSID"
+        default "patchy-wifi"
+        help
+            SSID advertised by the chip's SoftAP. Client devices connect to this
+            network to route their traffic through the gateway.
+
+    config PATCHY_AP_PASSWORD
+        string "SoftAP password (>=8 chars, empty = open)"
+        default "patchywifi"
+        help
+            WPA2-PSK passphrase for the SoftAP. Must be at least 8 characters,
+            or leave empty to run an open network (no auth).
+
+    config PATCHY_AP_CHANNEL
+        int "SoftAP channel"
+        range 1 13
+        default 1
+        help
+            Wi-Fi channel for the SoftAP. When STA is connected, the SoftAP is
+            forced onto the STA's channel regardless of this value (radio
+            limitation), so this mainly matters for the pre-STA window.
+
+    config PATCHY_AP_MAX_STA
+        int "Max stations on SoftAP"
+        range 1 10
+        default 4
+        help
+            Upper bound on concurrent clients associated to the SoftAP.
+
+    config PATCHY_JITTER_UPTIME_MIN_S
+        int "Jittery: min seconds AP 'online' between outages"
+        default 60
+        help
+            In jittery mode, the forwarding-up interval is picked uniformly at
+            random from [MIN_S, MAX_S]. Lower both values for quick validation.
+
+    config PATCHY_JITTER_UPTIME_MAX_S
+        int "Jittery: max seconds AP 'online' between outages"
+        default 240
+        help
+            Upper bound for the random uptime interval. Must be >= MIN_S.
+
+    config PATCHY_JITTER_DOWNTIME_MIN_S
+        int "Jittery: min seconds AP 'offline' per outage"
+        default 5
+        help
+            In jittery mode, each simulated outage lasts a random duration in
+            [MIN_S, MAX_S] with NAPT disabled on the SoftAP netif.
+
+    config PATCHY_JITTER_DOWNTIME_MAX_S
+        int "Jittery: max seconds AP 'offline' per outage"
+        default 10
+        help
+            Upper bound for the random downtime interval. Must be >= MIN_S.
+
+    config PATCHY_BUTTON_GPIO
+        int "Button GPIO (BOOT button)"
+        default 9
+        help
+            GPIO connected to the control button. Default 9 matches the BOOT
+            button on most ESP32-C3/C6 DevKits. ESP32 classic BOOT is GPIO 0.
+
+    config PATCHY_BUTTON_ACTIVE_LEVEL
+        int "Button active level (0 = low / BOOT, 1 = high)"
+        range 0 1
+        default 0
+        help
+            Logic level when the button is pressed. BOOT buttons pull the line
+            low when pressed, so keep 0 for the standard DevKit wiring.
+
+    config PATCHY_LED_BRIGHTNESS
+        int "LED brightness (0=off, 255=full brightness)"
+        default 64
+        help
+            Brightness level of the RGB LED.
+            0=off, 255=full brightness
+
+    config PATCHY_RESET_HOLD_MS
+        int "Button hold duration for network reset (ms)"
+        default 5000
+        help
+            Holding the button for at least this many milliseconds wipes stored
+            Wi-Fi credentials and reboots into provisioning mode. Must be
+            greater than PATCHY_JITTERY_HOLD_MS so the two gestures don't
+            collide.
+
+    config PATCHY_JITTERY_HOLD_MS
+        int "Button hold duration to toggle jittery mode (ms)"
+        default 1000
+        help
+            Press-and-release the button after at least this duration (but
+            shorter than PATCHY_RESET_HOLD_MS) to toggle jittery mode on/off.
+
+    config PATCHY_PROV_POP
+        string "Provisioning proof-of-possession"
+        default "patchy1234"
+        help
+            Shared secret required by the provisioning client (esp-prov CLI or
+            ESP BLE Provisioning phone app) to authenticate the Security 1
+            handshake. Change this for any non-demo deployment.
+
+endmenu

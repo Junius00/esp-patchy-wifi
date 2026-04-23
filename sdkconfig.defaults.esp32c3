@@ -1,0 +1,2 @@
+# ESP32-C3: BOOT = GPIO 9 (matches base default), WS2812 on GPIO 8 (C3-DevKitC-02 / M-1)
+# No overrides required; file present for symmetry and future tweaks.

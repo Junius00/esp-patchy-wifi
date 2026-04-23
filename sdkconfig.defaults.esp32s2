@@ -1,0 +1,11 @@
+# ESP32-S2: no Bluetooth — fall back to SoftAP provisioning transport.
+# BOOT = GPIO 0. WS2812 default GPIO 18 via app_led.
+CONFIG_PATCHY_BUTTON_GPIO=0
+
+# Switch provisioning transport to SoftAP (S2 has no BLE)
+CONFIG_APP_NETWORK_PROV_TRANSPORT_BLE=n
+CONFIG_APP_NETWORK_PROV_TRANSPORT_SOFTAP=y
+
+# Disable Bluetooth stack — not supported on S2
+CONFIG_BT_ENABLED=n
+CONFIG_BT_NIMBLE_ENABLED=n

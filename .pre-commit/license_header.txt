@@ -1,0 +1,3 @@
+SPDX-FileCopyrightText: 2026 Junius Pun
+
+SPDX-License-Identifier: MIT
