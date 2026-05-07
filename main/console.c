@@ -108,10 +108,39 @@ static int cmd_stop(int argc, char **argv)
     return print_err(patchy_fault_stop(), "stop");
 }
 
+static const char *inject_str(patchy_inject_mode_t m)
+{
+    switch (m) {
+    case INJECT_NAPT:   return "NAPT";
+    case INJECT_SOFTAP: return "SOFTAP";
+    }
+    return "?";
+}
+
+// ---- inject ----
+static int cmd_inject(int argc, char **argv)
+{
+    if (argc < 2) {
+        printf("inject: %s\n", inject_str(patchy_fault_get_inject_mode()));
+        return 0;
+    }
+    patchy_inject_mode_t m;
+    if (strcasecmp(argv[1], "napt") == 0) {
+        m = INJECT_NAPT;
+    } else if (strcasecmp(argv[1], "softap") == 0) {
+        m = INJECT_SOFTAP;
+    } else {
+        printf("inject: expected 'napt' or 'softap', got '%s'\n", argv[1]);
+        return 1;
+    }
+    return print_err(patchy_fault_set_inject_mode(m), "inject");
+}
+
 // ---- status ----
 static int cmd_status(int argc, char **argv)
 {
     printf("mode: %s\n", mode_str(patchy_fault_get_mode()));
+    printf("inject: %s\n", inject_str(patchy_fault_get_inject_mode()));
     return 0;
 }
 
@@ -173,6 +202,15 @@ static esp_err_t register_commands(void)
         .func = &cmd_stop,
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&stop_cmd));
+
+    const esp_console_cmd_t inject_cmd = {
+        .command = "inject",
+        .help = "Get or set fault injection mechanism (napt=NAPT toggle, "
+        "softap=tear down SoftAP). Refused while a fault is active.",
+        .hint = "[napt|softap]",
+        .func = &cmd_inject,
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&inject_cmd));
 
     const esp_console_cmd_t status_cmd = {
         .command = "status",

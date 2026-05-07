@@ -22,5 +22,10 @@ void patchy_gateway_on_sta_disconnected(void);
 // Enable/disable NAPT on the SoftAP netif. No-op if AP not yet up.
 esp_err_t patchy_gateway_set_forwarding(bool on);
 
+// Enable/disable the SoftAP itself by toggling Wi-Fi mode between APSTA
+// and STA. When disabling, NAPT is dropped first; when enabling, NAPT is
+// restored. Fails if the gateway has not been brought up yet.
+esp_err_t patchy_gateway_set_ap_enabled(bool on);
+
 // True if gateway has been brought up at least once this boot.
 bool patchy_gateway_is_up(void);

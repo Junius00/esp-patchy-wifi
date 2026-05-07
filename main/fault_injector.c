@@ -20,7 +20,18 @@
 static const char *TAG = "patchy-fault";
 
 static patchy_fault_mode_t s_mode = FAULT_OFF;
+static patchy_inject_mode_t s_inject_mode = INJECT_NAPT;
 static esp_timer_handle_t s_timer = NULL;
+
+// Apply (or clear) a simulated outage using the currently selected mechanism.
+// down=true means inject the fault; down=false means restore normal operation.
+static esp_err_t apply_fault(bool down)
+{
+    if (s_inject_mode == INJECT_SOFTAP) {
+        return patchy_gateway_set_ap_enabled(!down);
+    }
+    return patchy_gateway_set_forwarding(!down);
+}
 
 // cyclical state
 static uint32_t s_cycles_remaining;
@@ -43,10 +54,10 @@ static void jittery_tick(void)
 {
     bool currently_forwarding = (patchy_ui_get_state() == PATCHY_FORWARDING);
     if (currently_forwarding) {
-        patchy_gateway_set_forwarding(false);
+        apply_fault(true);
         schedule_jitter_next(false);   // next transition: back up
     } else {
-        patchy_gateway_set_forwarding(true);
+        apply_fault(false);
         schedule_jitter_next(true);    // next transition: go down
     }
 }
@@ -73,7 +84,7 @@ static void cyclical_tick(void)
 {
     if (s_cycle_phase_down) {
         // downtime just elapsed → bring up, schedule uptime
-        patchy_gateway_set_forwarding(true);
+        apply_fault(false);
         s_cycle_phase_down = false;
         ESP_LOGI(TAG, "cycle: up phase, %u s (cycles left after this: %u)",
                  (unsigned)s_cycle_up_s, (unsigned)(s_cycles_remaining - 1));
@@ -86,7 +97,7 @@ static void cyclical_tick(void)
             s_mode = FAULT_OFF;
             return;
         }
-        patchy_gateway_set_forwarding(false);
+        apply_fault(true);
         s_cycle_phase_down = true;
         ESP_LOGI(TAG, "cycle: down phase, %u s (%u cycles left)",
                  (unsigned)s_cycle_down_s, (unsigned)s_cycles_remaining);
@@ -128,11 +139,11 @@ esp_err_t patchy_fault_manual_set(bool down)
         return ESP_ERR_INVALID_STATE;
     }
     if (down) {
-        patchy_gateway_set_forwarding(false);
+        apply_fault(true);
         s_mode = FAULT_MANUAL_DOWN;
         ESP_LOGI(TAG, "manual disconnect");
     } else {
-        patchy_gateway_set_forwarding(true);
+        apply_fault(false);
         s_mode = FAULT_OFF;
         ESP_LOGI(TAG, "manual reconnect");
     }
@@ -154,7 +165,7 @@ esp_err_t patchy_fault_jittery_set(bool enable)
             return ESP_OK;
         }
         if (s_mode == FAULT_MANUAL_DOWN) {
-            patchy_gateway_set_forwarding(true);
+            apply_fault(false);
         }
         s_mode = FAULT_JITTERY;
         ESP_LOGI(TAG, "jittery ON");
@@ -164,7 +175,7 @@ esp_err_t patchy_fault_jittery_set(bool enable)
             return ESP_OK;
         }
         esp_timer_stop(s_timer);
-        patchy_gateway_set_forwarding(true);
+        apply_fault(false);
         s_mode = FAULT_OFF;
         ESP_LOGI(TAG, "jittery OFF");
     }
@@ -191,7 +202,7 @@ esp_err_t patchy_fault_cycle_start(uint32_t n, uint32_t down_s, uint32_t up_s)
     s_cycle_phase_down = true;
     s_mode = FAULT_CYCLICAL;
 
-    patchy_gateway_set_forwarding(false);
+    apply_fault(true);
     ESP_LOGI(TAG, "cycle: starting %u cycles, down %u s / up %u s",
              (unsigned)n, (unsigned)down_s, (unsigned)up_s);
     esp_timer_start_once(s_timer, (uint64_t)down_s * 1000000ULL);
@@ -206,9 +217,29 @@ esp_err_t patchy_fault_stop(void)
     if (s_timer) {
         esp_timer_stop(s_timer);
     }
-    patchy_gateway_set_forwarding(true);
+    apply_fault(false);
     s_mode = FAULT_OFF;
     ESP_LOGI(TAG, "fault stopped");
+    return ESP_OK;
+}
+
+patchy_inject_mode_t patchy_fault_get_inject_mode(void)
+{
+    return s_inject_mode;
+}
+
+esp_err_t patchy_fault_set_inject_mode(patchy_inject_mode_t mode)
+{
+    if (mode != INJECT_NAPT && mode != INJECT_SOFTAP) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (s_mode != FAULT_OFF) {
+        ESP_LOGW(TAG, "inject mode change refused: fault active (stop first)");
+        return ESP_ERR_INVALID_STATE;
+    }
+    s_inject_mode = mode;
+    ESP_LOGI(TAG, "inject mode: %s",
+             mode == INJECT_SOFTAP ? "SOFTAP" : "NAPT");
     return ESP_OK;
 }
 

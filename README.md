@@ -56,7 +56,30 @@ Simulated "disconnect" = NAPT disabled on the AP netif. Clients stay associated 
 | White | Pre-provisioning (no creds, BLE advertising)                           |
 | Red   | AP up but uplink STA not connected                                     |
 | Green | Connected + forwarding                                                 |
-| Blue  | Connected + simulated disconnect (NAPT off)                            |
+| Blue  | Connected + simulated disconnect                          |
+
+## Console commands
+
+A UART REPL is exposed over the same serial port used for `idf.py monitor`. Prompt is `patchy>`. Type `help` for the auto-generated list. All fault-injection commands require the gateway to be up (i.e. the STA is associated and the SoftAP is running) and return `ESP_ERR_INVALID_STATE` otherwise.
+
+| Command                  | Effect                                                                                                |
+| ------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `manual [on\|off]`       | Force a simulated disconnect on/off. With no argument, toggles. Refused while a timed mode is active. |
+| `jitter <on\|off>`       | Enable/disable jittery mode (random outages bounded by the jitter Kconfig values).                    |
+| `cycle <N> <DOWN_S> <UP_S>` | Run `N` cycles of `DOWN_S` seconds down then `UP_S` seconds up, then return to OFF.                |
+| `stop`                   | Stop any active fault mode and resume normal forwarding.                                              |
+| `status`                 | Print the current fault mode and the active injection mechanism.                                      |
+| `inject [napt\|softap]`  | Get or set the injection mechanism (see below). Refused while a fault is currently injected.          |
+| `reset --yes`            | Wipe Wi-Fi credentials and reboot into provisioning. Equivalent to the ≥5 s button hold.              |
+
+### Injection mechanisms
+
+The `inject` command picks **how** a simulated outage is produced. Switching modes is only allowed in the OFF state — `stop` first if a fault is currently injected.
+
+| Mode     | Behavior                                                                                                                  |
+| -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `napt`   | Default. Toggles NAPT forwarding on the SoftAP netif. Clients stay associated; only upstream packets are blocked.         |
+| `softap` | Tears down the SoftAP entirely by switching Wi-Fi mode to STA-only. The patchy SSID disappears; clients are deauthed.     |
 
 ## Configuration
 
