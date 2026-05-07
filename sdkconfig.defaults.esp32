@@ -2,3 +2,6 @@
 # app_led defaults to WS2812 on GPIO 18 for this target (most DevKits lack an
 # on-board RGB LED; wire a WS2812 to GPIO 18 or override in menuconfig).
 CONFIG_PATCHY_BUTTON_GPIO=0
+
+# Save on IRAM.
+CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH=y

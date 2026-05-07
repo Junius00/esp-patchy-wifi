@@ -7,6 +7,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
+#include "console.h"
 #include "fault_injector.h"
 #include "provisioning.h"
 #include "ui.h"
@@ -25,4 +26,5 @@ void app_main(void)
     ESP_ERROR_CHECK(patchy_ui_init(&ui_cbs));
     ESP_ERROR_CHECK(patchy_fault_init());
     ESP_ERROR_CHECK(patchy_prov_start());
+    ESP_ERROR_CHECK(patchy_console_start());
 }

@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "main.c" "ui.c" "provisioning.c" "gateway.c" "fault_injector.c"
+    SRCS "main.c" "ui.c" "provisioning.c" "gateway.c" "fault_injector.c" "console.c"
     INCLUDE_DIRS "."
     REQUIRES nvs_flash
              esp_wifi
@@ -8,4 +8,5 @@ idf_component_register(
              esp_timer
              lwip
              driver
+             console
 )
